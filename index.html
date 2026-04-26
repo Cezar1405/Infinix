@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netflix TMDb Ultra</title>
+
+<style>
+:root{
+    --bg:#111;
+    --text:#fff;
+    --red:#e50914;
+    --card:#1b1b1b;
+}
+
+@font-face {
+    font-family: "MiFuente";
+    src: url("fonts/Exo2-RegularCondensed.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:"MiFuente", sans-serif;
+    background:black;
+    color:var(--text);
+    overflow-x:hidden;
+}
+
+/* ================= NAV ================= */
+nav{
+    position:fixed;
+    top:0;
+    width:100%;
+    padding:12px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:transparent;
+    transition:0.4s;
+    z-index:1000;
+}
+
+nav.scrolled{
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(6px);
+}
+
+.logo{
+    font-size:22px;
+    font-weight:900;
+    color:var(--red);
+    filter:drop-shadow(0 10px 10px rgba(0,0,0,0.8));
+}
+
+/* ================= HERO ================= */
+.hero{
+    height:90vh;
+    position:relative;
+    overflow:hidden;
+}
+
+.hero-slide{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    transition:1s ease;
+    background-size:cover;
+    background-position:center;
+}
+
+.hero-slide.active{
+    opacity:1;
+}
+
+/* DEGRADADO SOLO FONDO */
+.hero-slide::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.7), transparent 50%);
+    z-index:1;
+}
+
+/* CONTENIDO */
+.hero-content{
+    position:absolute;
+    bottom:80px;
+    left:50px;
+    max-width:520px;
+    z-index:3;
+}
+
+.hero-logo{
+    max-height:80px;
+    margin-bottom: 10px;
+    width:auto;
+    filter:drop-shadow(0 10px 10px rgba(0,0,0,0.8));
+}
+
+.hero-title{
+    font-size:36px;
+    font-weight:900;
+    margin-bottom:10px;
+}
+
+.hero-overview{
+    font-size:13px;
+    opacity:0.85;
+    display:-webkit-box;
+    -webkit-line-clamp:4;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    margin-bottom:12px;
+    text-align: justify;
+    width:95%;
+    position:relative;
+}
+
+.hero-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:8px;
+}
+
+.hero-btn{
+    padding:8px 14px;
+    background:var(--red);
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+}
+
+.hero-badge{
+    background:rgba(255,255,255,0.92);
+    color:#111;
+    border:1px solid rgba(0,0,0,0.15);
+    padding:8px 12px;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.hero-actions{
+    gap:12px;
+}
+
+.hero-btn:hover{
+    transform:scale(1.04);
+}
+
+.hero-badge{
+    backdrop-filter:blur(8px);
+}
+
+/* ================= SECTION ================= */
+.section{
+    padding:25px;
+}
+
+/* ================= SLIDER ================= */
+.slider{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    padding:9px 0;
+}
+
+.slider::-webkit-scrollbar{display:none;}
+
+/* ================= CARD ================= */
+.card{
+    min-width:160px;
+    aspect-ratio:2/3;
+    background:var(--card);
+    border-radius:12px;
+    overflow:hidden;
+    position:relative;
+}
+
+.card img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+/* SOLO DEGRADADO ABAJO */
+.card::after{
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:50%;
+    background:linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+}
+
+/* GLOW LED */
+.card:hover{
+    box-shadow: 0 0 8px rgba(229, 9, 20, 0.6),
+                0 0 20px rgba(229, 9, 20, 0.4),
+                0 0 35px rgba(229, 9, 20, 0.3);
+}
+
+/* TEXTO ENCIMA DEL GRADIENT */
+.info{
+    position:absolute;
+    bottom:8px;
+    left:8px;
+    right:8px;
+    font-size:12px;
+    z-index:2;
+}
+
+/* RANK */
+.rank{
+    position:absolute;
+    top:8px;
+    left:8px;
+    background:var(--red);
+    padding:4px 6px;
+    font-size:11px;
+    border-radius:4px;
+    z-index:2;
+}
+
+/* RATING */
+.rating{
+    position:absolute;
+    top:8px;
+    right:8px;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:conic-gradient(var(--color) var(--percent), #222 0);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2;
+}
+
+.rating::before{
+    content:"";
+    position:absolute;
+    width:30px;
+    height:30px;
+    background:var(--card);
+    border-radius:50%;
+}
+
+.rating span{
+    position:relative;
+    font-size:10px;
+    font-weight:bold;
+}
+
+/* ================= GRID ================= */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:12px;
+    padding:9px 0;
+}
+
+/* ================= PAGINATION FINAL ================= */
+.pagination{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin:30px 0;
+}
+
+button{
+    padding:10px 15px;
+    background:var(--red);
+    border:none;
+    color:white;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+    margin: 0 5px;
+}
+
+.page{
+    font-weight:bold;
+    font-size: 15px;
+}
+
+/* ================= FOOTER ================= */
+footer{
+    text-align:center;
+    padding:25px;
+    background:#000;
+    font-size:12px;
+    color:#777;
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+.hero-content{left:20px;}
+.hero-title{font-size:26px;}
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+<div class="logo">INFINIX</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="hero"></div>
+
+<!-- POPULAR -->
+<div class="section">
+<h2>Top 10 de la semana</h2>
+<div class="slider" id="popular"></div>
+</div>
+
+<!-- GRID -->
+<div class="section">
+<h2>Todas las películas</h2>
+<div class="grid" id="grid"></div>
+</div>
+
+<!-- PAGINATION (FINAL) -->
+<div class="pagination">
+<button onclick="changePage(-1)">⟨</button>
+<span class="page" id="page">1</span>
+<button onclick="changePage(1)">⟩</button>
+</div>
+
+<footer>
+© 2026 INFINIX • by Cezar • Hecho con ❤️
+</footer>
+
+<script>
+function goDetails(id){
+    window.location.href = `details.html?id=${id}`;
+}
+
+const API_KEY="e5b2682e7bb828b5672763493fd61333";
+const IMG="https://image.tmdb.org/t/p/w500";
+const IMG_S="https://image.tmdb.org/t/p/w300";
+const today = new Date().toISOString().split("T")[0];
+
+let page=0;
+
+/* NAV SCROLL */
+window.addEventListener("scroll",()=>{
+document.querySelector("nav").classList.toggle("scrolled",window.scrollY>50);
+});
+/*Certificación*/
+async function getCertification(id){
+
+    try{
+        const data = await fetch(
+        `https://api.themoviedb.org/3/movie/${id}/release_dates?api_key=${API_KEY}`
+        ).then(r=>r.json());
+
+        const countries = ["US","ES","MX","AR"];
+
+        for(const code of countries){
+
+            const item = data.results.find(x => x.iso_3166_1 === code);
+
+            if(item){
+                const cert = item.release_dates.find(r => r.certification);
+
+                if(cert && cert.certification){
+                    return cert.certification;
+                }
+            }
+        }
+
+    }catch(e){}
+
+    return "NR";
+}
+
+/* HERO */
+async function loadHero(){
+const d = await fetch(
+`https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}&language=es-ES&page=1`
+).then(r => r.json());
+
+const hero = document.getElementById("hero");
+
+const movies = d.results.slice(0,10);
+
+// usamos Promise.all para no romper el render
+const slides = await Promise.all(
+movies.map(async (m) => {
+
+    let logoUrl = "";
+
+    try {
+        const img = await fetch(
+        `https://api.themoviedb.org/3/movie/${m.id}/images?api_key=${API_KEY}`
+        ).then(r => r.json());
+
+        if (img.logos && img.logos.length > 0) {
+            logoUrl = "https://image.tmdb.org/t/p/w300" + img.logos[1].file_path;
+        }
+    } catch (e) {}
+
+    const div = document.createElement("div");
+    div.className = "hero-slide";
+    div.style.backgroundImage = `url(${IMG + m.poster_path})`;
+    const cert = await getCertification(m.id);
+
+    div.innerHTML = `
+    <div class="hero-content">
+
+        ${logoUrl
+            ? `<img class="hero-logo" src="${logoUrl}">`
+            : `<div class="hero-title">${m.title}</div>`
+        }
+
+        <div class="hero-overview">${m.overview}</div>
+
+        <div class="hero-actions">
+            <div class="hero-btn" onclick="goDetails(${m.id})">▶ More info</div>
+        
+            <div class="hero-badge">${cert}</div>
+        </div>
+    </div>
+    `;
+
+    return div;
+})
+);
+
+// append correcto
+slides.forEach(s => hero.appendChild(s));
+
+// slider
+let i = 0;
+setInterval(() => {
+document.querySelectorAll(".hero-slide").forEach(s => s.classList.remove("active"));
+if (document.querySelectorAll(".hero-slide")[i]) {
+    document.querySelectorAll(".hero-slide")[i].classList.add("active");
+}
+i = (i + 1) % slides.length;
+}, 5000);
+}
+
+/* POPULAR */
+async function loadPopular(){
+const d=await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}&language=es-ES&page=1`).then(r=>r.json());
+
+const el=document.getElementById("popular");
+el.innerHTML="";
+
+d.results.slice(0,10).forEach((m,i)=>{
+
+const vote=(m.vote_average/10)*100;
+const color=m.vote_average>=7?"#4caf50":m.vote_average>=5?"#ff9800":"#f44336";
+
+el.innerHTML+=`
+<div class="card" onclick="goDetails(${m.id})">
+<div class="rank">#${i+1}</div>
+<div class="rating" style="--percent:${vote}%;--color:${color}">
+<span>${m.vote_average.toFixed(1)}</span>
+</div>
+<img src="${IMG_S+m.poster_path}">
+<div class="info">${m.title}</div>
+</div>`;
+});
+}
+
+/* GRID */
+async function loadGrid(){
+const d=await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=es-ES&page=${page+1}`).then(r=>r.json());
+
+const el=document.getElementById("grid");
+el.innerHTML="";
+
+d.results.forEach(m=>{
+
+const vote=(m.vote_average/10)*100;
+const color=m.vote_average>=7?"#4caf50":m.vote_average>=5?"#ff9800":"#f44336";
+
+el.innerHTML+=`
+<div class="card" onclick="goDetails(${m.id})">
+<div class="rating" style="--percent:${vote}%;--color:${color}">
+<span>${m.vote_average.toFixed(1)}</span>
+</div>
+<img src="${IMG_S+m.poster_path}">
+<div class="info">${m.title}</div>
+</div>`;
+});
+}
+
+/* PAGINATION */
+function changePage(v){
+page+=v;
+if(page<1)page=1;
+document.getElementById("page").innerText=page;
+loadPopular();
+loadGrid();
+}
+
+/* INIT */
+loadHero();
+loadPopular();
+loadGrid();
+</script>
+
+</body>
+</html>
