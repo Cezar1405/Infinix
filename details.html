@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TMDb JSON Generator</title>
+
+<style>
+:root{
+    --bg:#111;
+    --text:#fff;
+    --red:#e50914;
+    --card:#1b1b1b;
+}
+
+@font-face {
+    font-family: "MiFuente";
+    src: url("fonts/Exo2-RegularCondensed.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+body{
+    font-family: "MiFuente", sans-serif;
+    background:black;
+    color: var(--text);
+}
+
+h1{
+    margin-bottom:20px;
+}
+
+input, button{
+    padding:10px;
+    font-size:16px;
+    border:none;
+    border-radius:6px;
+}
+
+input{
+    width:220px;
+}
+
+button{
+    background:var(--bg);
+    color:white;
+    cursor:pointer;
+    margin-left:10px;
+}
+
+button:hover{
+    background:var(--red);
+}
+
+pre{
+margin-top:25px;
+background:var(--card);
+padding:20px;
+border-radius:10px;
+overflow:auto;
+white-space:pre-wrap;
+display: none;
+}
+
+/* ================= HERO ================= */
+.details-page{
+position:relative;
+width:100%;
+}
+
+.details-hero{
+position:relative;
+aspect-ratio:16/9;
+overflow: hidden;
+}
+
+.details-hero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:2;
+    background:linear-gradient(
+        to top,
+        #111 0%,
+        rgba(17,17,17,.75) 30%,
+        rgba(17,17,17,.25) 55%,
+        transparent 80%
+    );
+    pointer-events:none;
+}
+
+.details-overlay{
+width: 100%;
+height:100%;
+object-fit:cover;
+}
+
+.details-content{
+position:absolute;
+left:0;
+right:0;
+bottom:20px;
+z-index:3;
+padding:10px;
+}
+
+.details-logo{
+position:relative;
+max-width:200px;
+max-height:50px;
+margin-bottom:14px;
+filter:drop-shadow(0 8px 14px rgba(0,0,0,.6));
+margin:10px;
+}
+
+.details-meta{
+color: gray;
+margin-bottom:10px;
+}
+
+.details-meta span{
+background: var(--bg);
+border-radius:5px;
+border: 1px solid gray;
+padding: 5px;
+margin-right:6px;
+}
+/* RATING */
+.rating{
+    position:absolute;
+    top:8px;
+    right:8px;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:conic-gradient(var(--color) var(--percent), #222 0);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2;
+}
+
+.rating::before{
+    content:"";
+    position:absolute;
+    width:30px;
+    height:30px;
+    background:var(--card);
+    border-radius:50%;
+}
+
+.rating span{
+    position:relative;
+    font-size:10px;
+    font-weight:bold;
+}
+
+.info-block, .details-trailer{
+background:var(--bg);
+padding:5px 10px;
+margin: 5px 0;
+text-align: justify;
+color:gray;
+font-size:13px;
+}
+
+.info-block:hover{
+background:#1b1b1b;
+transition:.25s;
+}
+
+.label{
+color: #e6b800;
+}
+
+.hero-title{
+font-size:28px;
+font-weight:800;
+letter-spacing:.3px;
+margin-bottom:10px;
+}
+
+.details-title{
+font-size:28px;
+font-weight:800;
+letter-spacing:.3px;
+}
+
+h2{
+color:var(--text);
+}
+
+.hero-meta{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+font-size:14px;
+color:#ddd;
+margin-bottom:14px;
+}
+
+
+/* ================= BUTTONS ================= */
+.details-actions{
+display:flex;
+gap:10px;
+}
+
+.btn-play{
+flex:1;
+height:46px;
+max-width:200px;
+border:none;
+border-radius:8px;
+font-size:15px;
+font-weight:700;
+cursor:pointer;
+}
+
+.btn-play{
+background:#fff;
+color:#000;
+}
+
+.btn-play:hover{
+background:var(--red);
+color:var(--text);
+}
+
+.btn-icon{
+background:rgba(109,109,110,.7);
+color:#fff;
+width:45px;
+border:1px solid rgba(255,255,255,.15);
+}
+
+/* ================= TRAILER ================= */
+.details-trailer{
+overflow:hidden;
+border-radius:14px;
+background:#000;
+aspect-ratio:16/9;
+}
+
+.details-trailer iframe{
+width:100%;
+height:100%;
+border:none;
+}
+
+/* ================= PLAYERS ================= */
+.players{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.player-btn{
+display:flex;
+align-items:center;
+justify-content:center;
+height:46px;
+background:#1f1f1f;
+color:#fff;
+text-decoration:none;
+border-radius:10px;
+font-size:14px;
+font-weight:700;
+}
+
+footer{
+    text-align:center;
+    padding:25px;
+    background:#000;
+    font-size:12px;
+    color:#777;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(min-width:768px){
+
+    body{
+    max-width:800px;
+    margin:auto;
+    background:#000;
+    }
+    .details-logo{
+    max-width:400px;
+    max-height:100px;
+    }
+    .rating{
+    top:20px;
+    right:20px;
+    width:72px;
+    height:72px;
+    }
+    .rating::before{
+    width:55px;
+    height:55px;
+    }
+    .rating span{
+    font-size:20px;
+    }
+}
+</style>
+</head>
+<body>
+
+<h1>TMDb JSON Generator</h1>
+<div class="input_id">
+<input type="number" id="movieId" placeholder="ID TMDb">
+<button onclick="crearJsonTMDB()">Generar JSON</button>
+</div>
+
+<!-- <pre id="resultado">Aquí aparecerá el JSON...</pre> -->
+
+<div id="resultado"></div>
+
+<footer>
+© 2026 INFINIX • by Cezar • Hecho con ❤️
+</footer>
+
+<script>
+const API_KEY = "e5b2682e7bb828b5672763493fd61333";
+
+function generarPlayers(id){
+    return [
+        {
+            nombre: "Videasy",
+            url: `https://player.videasy.net/movie/${id}?color=FF0000&overlay=true`
+        },
+        {
+            nombre: "VidFast",
+            url: `https://vidfast.pro/movie/${id}?autoPlay=true&title=true&poster=true&theme=FF0000`
+        },
+        {
+            nombre: "VidLink",
+            url: `https://vidlink.pro/movie/${id}?primaryColor=FF0000&secondaryColor=a2a2a2&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=true&nextbutton=false`
+        },
+        {
+            nombre: "VidRock",
+            url: `https://vidrock.net/mega/movie/${id}`
+        },
+        {
+            nombre: "VidSrc1",
+            url: `https://www.vidsrc.wtf/api/1/movie/?color=FF0000&id=${id}`
+        },
+        {
+            nombre: "VidSrc2",
+            url: `https://www.vidsrc.wtf/api/2/movie/?color=FF0000&id=${id}`
+        },
+        {
+            nombre: "VidSrc3",
+            url: `https://www.vidsrc.wtf/api/3/movie/?color=FF0000&id=${id}`
+        },
+        {
+            nombre: "VidSrc4",
+            url: `https://www.vidsrc.wtf/api/4/movie/?color=FF0000&id=${id}`
+        }
+    ];
+}
+
+async function crearJsonTMDB(idManual = null){
+
+const id =
+idManual ||
+document.getElementById("movieId").value.trim();
+
+if(!id){
+    alert("Introduce un ID");
+    return;
+}
+
+document.getElementById("movieId").value = id;
+
+const salida = document.getElementById("resultado");
+
+try{
+
+salida.innerHTML = "Cargando...";
+
+const url = `https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}&language=es-ES&append_to_response=videos,credits,images,release_dates,watch/providers`;
+
+const res = await fetch(url);
+const data = await res.json();
+
+if(data.success === false){
+    salida.textContent = "Película no encontrada o API Key inválida.";
+    return;
+}
+
+const cert = data.release_dates?.results
+?.find(x => x.iso_3166_1 === "US")
+?.release_dates?.find(x => x.certification !== "")
+?.certification || "N/A";
+
+const trailer = data.videos?.results
+?.find(v => v.site === "YouTube" && v.type === "Trailer");
+
+const logo = data.images?.logos?.[0];
+
+const providers =
+data["watch/providers"]?.results?.US?.flatrate
+?.map(p => p.provider_name) || [];
+
+const json = {
+id_tmdb: data.id || "",
+titulo_original: data.original_title || "",
+titulo_global: data.title || "",
+fecha_estreno: data.release_date || "",
+certificacion: cert,
+generos: data.genres?.map(g => g.name) || [],
+tiempo: data.runtime ? data.runtime + " min" : "",
+trailer_yt: trailer
+? `https://www.youtube.com/watch?v=${trailer.key}`
+: "",
+puntuacion: data.vote_average || 0,
+poster_horizontal: data.backdrop_path
+? `https://image.tmdb.org/t/p/original${data.backdrop_path}`
+: "",
+poster_vertical: data.poster_path
+? `https://image.tmdb.org/t/p/original${data.poster_path}`
+: "",
+logo_film: logo
+? `https://image.tmdb.org/t/p/original${logo.file_path}`
+: "",
+proveedores: providers,
+actores: data.credits?.cast?.slice(0,10).map(a => a.name) || [],
+productores: data.production_companies?.map(p => p.name) || [],
+descripcion: data.overview || "",
+players: generarPlayers(data.id)
+};
+
+const vote = (json.puntuacion / 10) * 100;
+
+const color =
+json.puntuacion >= 7
+? "#4caf50"
+: json.puntuacion >= 5
+? "#ff9800"
+: "#f44336";
+
+/* PANTALLA DETAILS */
+salida.innerHTML = `
+<div class="details-page">
+
+    <!-- HERO -->
+    <section class="details-hero">
+        <img class="details-overlay" src="${json.poster_horizontal}"/>
+
+        <div class="details-content">
+
+            ${
+                json.logo_film
+                ? `<img src="${json.logo_film}" class="details-logo">`
+                : `<h2 class="details-title">${json.titulo_global}</h2>`
+            }
+
+            <div class="details-actions">
+                <button class="btn-play">▶ Reproducir</button>
+                <button class="btn-icon">＋</button>
+                <button class="btn-icon">❤</button>
+                <button class="btn-icon">⬇</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- INFO -->
+    <section class="details-section">
+    
+        <div class="info-block">
+            <h2 class="details-title">${json.titulo_global}</h2>
+            <div class="details-meta">
+                <span>${json.fecha_estreno}</span>
+                <span>${json.tiempo}</span>
+                <span class="badge-age">${json.certificacion}</span>
+            </div>
+            <div class="rating" style="--percent:${vote}%;--color:${color}">
+                <span>${json.puntuacion.toFixed(1)}</span>
+            </div>
+        </div>
+    
+        <div class="info-block">
+           <p class="details-description">
+                ${json.descripcion}
+            </p>
+        </div>
+
+        <div class="info-block">
+            <span class="label">Actores:</span>
+            ${json.actores.join(", ")}
+        </div>
+
+        <div class="info-block">
+            <span class="label">Productores:</span>
+            ${json.productores.join(", ")}
+        </div>
+
+        <div class="info-block">
+            <span class="label">Géneros:</span>
+            ${json.generos.join(", ")}
+        </div>
+
+        <div class="info-block">
+            <span class="label">Streaming:</span>
+            ${json.proveedores.join(", ") || "No disponible"}
+        </div>
+
+    </section>
+
+    ${
+        trailer
+        ? `
+        <section class="details-trailer">
+            <h2><b>Trailer</b></h2>
+
+            <iframe
+                src="https://www.yout-ube.com/embed/${trailer.key}">
+            </iframe>
+        </section>
+        `
+        : ""
+    }
+
+    <!-- JSON oculto pero conservado -->
+    <pre>${JSON.stringify(json,null,2)}</pre>
+
+</div>
+`;
+
+}catch(error){
+salida.textContent = "Error: " + error;
+}
+
+}
+
+/* LEER ID DESDE URL */
+/* details.html?id=550 */
+
+const params = new URLSearchParams(window.location.search);
+const movieId = params.get("id");
+const inputId = document.querySelector(".input_id");
+
+if(movieId){
+    crearJsonTMDB(movieId);
+    inputId.style.display = "none";
+}
+</script>
+
+</body>
+</html>
