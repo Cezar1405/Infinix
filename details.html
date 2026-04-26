@@ -249,23 +249,63 @@ border:none;
 }
 
 /* ================= PLAYERS ================= */
-.players{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
+
+.player-container{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:60%;
+    background:black;
+    transform:translateY(100%);
+    opacity:0;
+    transition:0.4s ease;
+    z-index:9999;
 }
 
-.player-btn{
-display:flex;
-align-items:center;
-justify-content:center;
-height:46px;
-background:#1f1f1f;
-color:#fff;
-text-decoration:none;
-border-radius:10px;
-font-size:14px;
-font-weight:700;
+.player-container.active{
+    transform:translateY(0);
+    opacity:1;
+}
+
+.player-container iframe{
+    width:100%;
+    height:100%;
+    border:none;
+}
+
+.player-container{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:60%;
+    transform:translateY(100%);
+    transition:0.35s ease;
+    z-index:9999;
+    background:black;
+}
+
+.player-container.active{
+    transform:translateY(0);
+}
+
+.player-container.full{
+    height:100%;
+}
+
+.player-container{
+    touch-action: none;
+}
+
+.invicible{
+    position: absolute;
+    top:0;
+    left:0;
+    width:70px;
+    height:70px;
+    background:transparent; /* mejor así */
+    z-index: 10;
 }
 
 footer{
@@ -305,7 +345,6 @@ footer{
 </style>
 </head>
 <body>
-
 <div class="input_id">
 <h1>TMDb JSON Generator</h1>
 <input type="number" id="movieId" placeholder="ID TMDb">
@@ -315,6 +354,10 @@ footer{
 <!-- <pre id="resultado">Aquí aparecerá el JSON...</pre> -->
 
 <div id="resultado"></div>
+<div id="playerContainer" class="player-container">
+    <div class="invicible"></div>
+    <iframe id="playerFrame" src=""></iframe>
+</div>
 
 <footer>
 © 2026 INFINIX • by Cezar • Hecho con ❤️
@@ -528,6 +571,26 @@ salida.innerHTML = `
 </div>
 `;
 
+setTimeout(() => {
+
+    const btn = document.querySelector(".btn-play");
+    const frame = document.getElementById("playerFrame");
+    const container = document.getElementById("playerContainer");
+
+    if(btn){
+
+        btn.addEventListener("click", () => {
+
+            const url = `https://www.1flex.org/play?tmdbid=${json.id_tmdb}&type=movie&token=iWGVg0Uk6vGRS2eK`;
+
+            frame.src = url;
+            container.classList.add("active");
+        });
+
+    }
+
+}, 100);
+
 }catch(error){
 salida.textContent = "Error: " + error;
 }
@@ -545,6 +608,19 @@ if(movieId){
     crearJsonTMDB(movieId);
     inputId.style.display = "none";
 }
+
+const inv = document.querySelector(".invicible");
+const container = document.getElementById("playerContainer");
+const frame = document.getElementById("playerFrame");
+
+inv.addEventListener("click", () => {
+
+    container.classList.remove("active");
+    container.classList.remove("full");
+
+    frame.src = ""; // limpia el iframe
+});
+
 </script>
 
 </body>
