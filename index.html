@@ -177,6 +177,12 @@ nav.scrolled{
     padding:25px;
 }
 
+.title_gnre{
+border-left:4px solid var(--red);
+padding-left:12px;
+font-size:20px;
+}
+
 .ver-mas-btn{
 padding:8px 14px;
 border:none;
@@ -695,7 +701,7 @@ wrap.innerHTML += `
 <div class="section">
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-<h2>${g.name}</h2>
+<h2 class="title_gnre">${g.name}</h2>
 
 <button class="ver-mas-btn"
 onclick="showGenreGrid(${g.id},'${g.name}')">
