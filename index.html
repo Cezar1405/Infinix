@@ -269,6 +269,76 @@ nav.scrolled{
     padding:9px 0;
 }
 
+/*============== MODAL DETAILS ==============*/
+.details-modal{
+position:fixed;
+inset:0;
+z-index:9999;
+display:flex;
+justify-content:center;
+align-items:center;
+opacity:0;
+pointer-events:none;
+transition:.35s ease;
+}
+
+.details-modal.active{
+opacity:1;
+pointer-events:auto;
+}
+
+.details-backdrop{
+position:absolute;
+inset:0;
+background:rgba(0,0,0,.45);
+backdrop-filter:blur(10px);
+-webkit-backdrop-filter:blur(10px);
+}
+
+.details-box{
+position:relative;
+width:95%;
+max-width:900px;
+height:92%;
+background:#000;
+border-radius:18px;
+overflow:hidden;
+transform:scale(.92);
+transition:.35s ease;
+box-shadow:0 0 40px rgba(0,0,0,.6);
+}
+
+.details-modal.active .details-box{
+transform:scale(1);
+}
+
+.details-box iframe{
+width:100%;
+height:100%;
+border:none;
+}
+
+.close-details{
+position:absolute;
+top:15px;
+left:0;
+z-index:3;
+padding:8px 10px;
+border:none;
+border-radius:0 10px 10px 0;
+background:linear-gradient(180deg,#e50914,#7a0000);
+box-shadow:0 0 20px rgba(229,9,20,.35);
+color:#fff;
+font-size:17px;
+font-weight: bold;
+cursor:pointer;
+}
+
+.close-details:hover{
+background:#fff;
+color:#000;
+}
+
 /* ================= PAGINATION FINAL ================= */
 .pagination{
     display:flex;
@@ -343,9 +413,44 @@ footer{
 © 2026 INFINIX • by Cezar • Hecho con ❤️
 </footer>
 
+<div class="details-modal" id="detailsModal">
+
+    <div class="details-backdrop" onclick="closeDetails()"></div>
+
+    <div class="details-box">
+
+        <button class="close-details" onclick="closeDetails()">✕</button>
+
+        <iframe id="detailsFrame" src=""></iframe>
+
+    </div>
+
+</div>
+
 <script>
 function goDetails(id){
-    window.location.href = `details.html?id=${id}`;
+
+const modal = document.getElementById("detailsModal");
+const frame = document.getElementById("detailsFrame");
+
+frame.src = `details.html?id=${id}`;
+
+modal.classList.add("active");
+document.body.style.overflow = "hidden";
+}
+
+function closeDetails(){
+
+const modal = document.getElementById("detailsModal");
+const frame = document.getElementById("detailsFrame");
+
+modal.classList.remove("active");
+document.body.style.overflow = "";
+
+setTimeout(()=>{
+    frame.src = "";
+},350);
+
 }
 
 const API_KEY="e5b2682e7bb828b5672763493fd61333";
