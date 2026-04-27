@@ -581,7 +581,7 @@ setTimeout(() => {
 
         btn.addEventListener("click", () => {
 
-            const url = `https://www.1flex.org/play?tmdbid=${json.id_tmdb}&type=movie&token=iWGVg0Uk6vGRS2eK`;
+            const url = `/player?tmdbid=${json.id_tmdb}`;
 
             frame.src = url;
             container.classList.add("active");
