@@ -177,6 +177,25 @@ nav.scrolled{
     padding:25px;
 }
 
+.ver-mas-btn{
+padding:8px 14px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+color:#fff;
+font-size:12px;
+font-weight:bold;
+
+box-shadow:0 0 20px rgba(229,9,20,.35);
+background:linear-gradient(180deg,#e50914,#7a0000);
+transition:.25s ease;
+}
+
+.ver-mas-btn:hover{
+transform:scale(1.05);
+filter:brightness(1.08);
+}
+
 /* ================= SLIDER ================= */
 .slider{
     display:flex;
@@ -408,9 +427,12 @@ footer{
 <div class="slider" id="popular"></div>
 </div>
 
+<!-- CATEGORIAS -->
+<div id="categories"></div>
+
 <!-- GRID -->
-<div class="section">
-<h2>Todas las películas</h2>
+<div class="section" id="gridSection">
+<h2 id="gridTitle">Todas las películas</h2>
 <div class="grid" id="grid"></div>
 </div>
 
@@ -471,6 +493,9 @@ const IMG_S="https://image.tmdb.org/t/p/w300";
 const today = new Date().toISOString().split("T")[0];
 
 let page=1;
+let currentMode = "popular";
+let currentGenre = null;
+let currentGenreName = "";
 
 /* NAV SCROLL */
 window.addEventListener("scroll",()=>{
@@ -597,40 +622,226 @@ el.innerHTML+=`
 
 /* GRID */
 async function loadGrid(){
-const d=await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=es-ES&page=${page}`).then(r=>r.json());
 
-const el=document.getElementById("grid");
-el.innerHTML="";
+let url = "";
+
+if(currentMode === "popular"){
+
+url = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=es-ES&page=${page}`;
+
+}else{
+
+url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=es-ES&sort_by=popularity.desc&with_genres=${currentGenre}&page=${page}`;
+
+}
+
+const d = await fetch(url).then(r=>r.json());
+
+const el = document.getElementById("grid");
+
+el.innerHTML = "";
 
 d.results.forEach(m=>{
 
 const vote=(m.vote_average/10)*100;
-const color=m.vote_average>=7?"#4caf50":m.vote_average>=5?"#ff9800":"#f44336";
+
+const color=
+m.vote_average>=7?"#4caf50":
+m.vote_average>=5?"#ff9800":
+"#f44336";
 
 el.innerHTML+=`
 <div class="card" onclick="goDetails(${m.id})">
-<div class="rating" style="--percent:${vote}%;--color:${color}">
+
+<div class="rating"
+style="--percent:${vote}%;--color:${color}">
 <span>${m.vote_average.toFixed(1)}</span>
 </div>
-<img src="${IMG_S+m.poster_path}">
+
+<img loading="lazy" src="${IMG_S+m.poster_path}">
+
 <div class="info">${m.title}</div>
-</div>`;
+
+</div>
+`;
+
 });
+}
+
+/* =====================================================
+   NUEVAS CATEGORÍAS EXTRA
+   NO ROMPE NADA DE LO ACTUAL
+   USA POPULAR + with_genres
+===================================================== */
+
+const genres = [
+    { id: 28, name: "Acción" },
+    { id: 16, name: "Animación" },
+    { id: 35, name: "Comedia" },
+    { id: 27, name: "Terror" },
+    { id: 18, name: "Drama" },
+    { id: 878, name: "Ciencia ficción" },
+    { id: 10749, name: "Romance" }
+];
+
+/* Crear secciones vacías */
+function createCategorySections(){
+
+const wrap = document.getElementById("categories");
+
+genres.forEach(g => {
+
+wrap.innerHTML += `
+<div class="section">
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<h2>${g.name}</h2>
+
+<button class="ver-mas-btn"
+onclick="showGenreGrid(${g.id},'${g.name}')">
+Ver más...
+</button>
+</div>
+
+<div class="slider lazy-slider"
+id="genre-${g.id}"
+data-genre="${g.id}">
+</div>
+
+</div>
+`;
+
+});
+}
+
+/* funcion ver mas */
+function showGenreGrid(id,name){
+
+page = 1;
+currentMode = "genre";
+currentGenre = id;
+currentGenreName = name;
+
+document.getElementById("page").innerText = page;
+document.getElementById("gridTitle").innerText = "Películas de " + name;
+
+loadGrid();
+scrollToGrid();
+}
+
+//scrolleo a las pelis
+function scrollToGrid(){
+
+document.getElementById("gridSection")
+.scrollIntoView({
+behavior:"smooth",
+block:"start"
+});
+
+}
+
+/* Cargar una categoría */
+async function loadGenre(id){
+
+const el = document.getElementById(`genre-${id}`);
+
+if(!el || el.dataset.loaded) return;
+
+el.dataset.loaded = "true";
+
+el.innerHTML = "Cargando...";
+
+try{
+
+const d = await fetch(
+`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=es-ES&sort_by=popularity.desc&with_genres=${id}&page=1`
+).then(r=>r.json());
+
+el.innerHTML = "";
+
+d.results.slice(0,10).forEach(m => {
+
+const vote = (m.vote_average/10)*100;
+
+const color =
+m.vote_average >= 7 ? "#4caf50" :
+m.vote_average >= 5 ? "#ff9800" :
+"#f44336";
+
+el.innerHTML += `
+<div class="card" onclick="goDetails(${m.id})">
+
+    <div class="rating"
+    style="--percent:${vote}%;--color:${color}">
+        <span>${m.vote_average.toFixed(1)}</span>
+    </div>
+
+    <img
+    loading="lazy"
+    src="${IMG_S+m.poster_path}">
+
+    <div class="info">${m.title}</div>
+
+</div>
+`;
+
+});
+
+}catch(e){
+el.innerHTML = "Error al cargar";
+}
+
+}
+
+/* Lazy load sliders */
+function initCategoryLazy(){
+
+const observer = new IntersectionObserver(entries => {
+
+entries.forEach(entry => {
+
+if(entry.isIntersecting){
+
+const id = entry.target.dataset.genre;
+
+loadGenre(id);
+
+observer.unobserve(entry.target);
+
+}
+
+});
+
+},{
+rootMargin:"300px"
+});
+
+document
+.querySelectorAll(".lazy-slider")
+.forEach(el => observer.observe(el));
+
 }
 
 /* PAGINATION */
 function changePage(v){
-page+=v;
-if(page<1)page=1;
-document.getElementById("page").innerText=page;
-//loadPopular();
+
+page += v;
+
+if(page < 1) page = 1;
+
+document.getElementById("page").innerText = page;
+
 loadGrid();
+
+scrollToGrid();
 }
 
 /* INIT */
 loadHero();
 loadPopular();
 loadGrid();
+createCategorySections();
+initCategoryLazy();
 </script>
 
 </body>
