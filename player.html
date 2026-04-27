@@ -195,7 +195,7 @@ font-size:18px;
 
 <!-- PLAYER -->
 <div class="player-wrap">
-<iframe id="frame" src="" allowfullscreen></iframe>
+<iframe id="frame" allowfullscreen></iframe>
 </div>
 
 <!-- PANEL -->
@@ -243,6 +243,30 @@ const panel = document.getElementById("panel");
 const btn = document.getElementById("toggleBtn");
 const frame = document.getElementById("frame");
 const select = document.getElementById("serverSelect");
+
+window.open = function () {
+    console.log("Popup bloqueado");
+    return null;
+};
+document.addEventListener("click", function (e) {
+    const a = e.target.closest("a");
+    if (!a) return;
+
+    if (a.target === "_blank") {
+        e.preventDefault();
+        console.log("Bloqueado target _blank");
+    }
+});
+frame.onload = () => {
+    try {
+        frame.contentWindow.open = function () {
+            console.log("Popup dentro del iframe bloqueado");
+            return null;
+        };
+    } catch (e) {
+        // cross-origin (normal en streams)
+    }
+};
 
 function togglePanel(){
 panel.classList.toggle("active");
