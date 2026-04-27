@@ -309,7 +309,7 @@ border:none;
 
 .close-hint{
     position:absolute;
-    top:15%;
+    top:20%;
     left:50%;
     transform:translate(-50%,-50%);
     color:rgba(255,255,255,.75);
@@ -621,6 +621,14 @@ salida.textContent = "Error: " + error;
 
 /* LEER ID DESDE URL */
 /* details.html?id=550 */
+const params = new URLSearchParams(window.location.search);
+const movieId = params.get("id");
+const inputId = document.querySelector(".input_id");
+
+if(movieId){
+    crearJsonTMDB(movieId);
+    inputId.style.display = "none";
+}
 
 const inv = document.querySelector(".invicible");
 const container = document.getElementById("playerContainer");
