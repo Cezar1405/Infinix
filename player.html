@@ -244,6 +244,33 @@ const btn = document.getElementById("toggleBtn");
 const frame = document.getElementById("frame");
 const select = document.getElementById("serverSelect");
 
+const allowedDomains = [
+    "videasy.net",
+    "vidfast.pro",
+    "vidlink.pro",
+    "vidrock.net",
+    "vidsrc.wtf"
+];
+
+function isAllowed(url) {
+    try {
+        const u = new URL(url);
+        return allowedDomains.some(domain => u.hostname.includes(domain));
+    } catch (e) {
+        return false;
+    }
+}
+
+function safeLoad(url) {
+
+    if (!isAllowed(url)) {
+        console.log("Bloqueado:", url);
+        return;
+    }
+
+    frame.src = url;
+}
+
 window.open = function () {
     console.log("Popup bloqueado");
     return null;
@@ -266,6 +293,31 @@ frame.onload = () => {
     } catch (e) {
         // cross-origin (normal en streams)
     }
+};
+
+let lastSafeUrl = null;
+
+frame.onload = () => {
+    try {
+        const win = frame.contentWindow;
+
+        if (!lastSafeUrl) lastSafeUrl = frame.src;
+
+        setInterval(() => {
+            try {
+                const current = win.location.href;
+
+                if (!isAllowed(current)) {
+                    console.log("Redirección bloqueada:", current);
+                    win.location.replace(lastSafeUrl);
+                }
+
+            } catch (e) {
+                // cross-origin → no control total
+            }
+        }, 1000);
+
+    } catch (e) {}
 };
 
 function togglePanel(){
@@ -337,7 +389,7 @@ option.textContent = server.name;
 select.appendChild(option);
 
 if(index === 0){
-frame.src = option.value;
+safeLoad(option.value);
 }
 
 });
