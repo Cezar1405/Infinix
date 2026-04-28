@@ -443,7 +443,7 @@ async function scrapServersLat(pelisplusUrl){
         const res = await fetch(pelisplusUrl);
 
         if(!res.ok){
-            showToast("No abrió PelisPlus");
+            showToast("No abrió la página");
             return [];
         }
 
@@ -452,51 +452,45 @@ async function scrapServersLat(pelisplusUrl){
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
 
-        const items = doc.querySelectorAll("li.playurl");
+        const iframes = doc.querySelectorAll("iframe");
 
         const servers_lat = [];
 
-        items.forEach(item => {
+        iframes.forEach(frame => {
 
-            const idioma =
-            (item.dataset.name || "")
-            .toLowerCase()
-            .trim();
+            let src = frame.getAttribute("src");
 
-            if(
-                idioma === "español" ||
-                idioma === "español latino"
-            ){
+            if(!src) return;
 
-                const host = item.innerText.trim();
-                const url = item.dataset.url;
-
-                if(url){
-                    servers_lat.push({
-                        name: host,
-                        url: url
-                    });
-                }
-
+            // normalizar URL relativa
+            if(src.startsWith("//")){
+                src = "https:" + src;
             }
+
+            // filtrar vacíos o basura
+            if(src.includes("about:blank")) return;
+
+            servers_lat.push({
+                name: "Cuevana",
+                url: src
+            });
 
         });
 
         if(servers_lat.length === 0){
-            showToast("No se encontraron links LAT");
+            showToast("No se encontraron iframes");
         }else{
-            showToast("Links LAT encontrados: " + servers_lat.length);
+            showToast("IFRAMES encontrados: " + servers_lat.length);
         }
 
         return servers_lat;
 
     }catch(err){
 
-        showToast("Falló scraping");
+        showToast("Error scraping iframe");
         return [];
 
     }
-
 }
 
 /* CARGAR TMDB */
@@ -514,8 +508,10 @@ async function loadMovie(){
 
     document.getElementById("title").textContent = movieTitle;
 
+    const data_film = (data.release_date || "").slice(0,4);
+
     document.getElementById("meta").textContent =
-    `${(data.release_date || "").slice(0,4)} • ${data.runtime || 0} min • ⭐ ${data.vote_average?.toFixed(1) || "0"}`;
+    `${data_film} • ${data.runtime || 0} min • ⭐ ${data.vote_average?.toFixed(1) || "0"}`;
 
     document.getElementById("desc").textContent =
     data.overview || "Sin descripción.";
@@ -528,9 +524,8 @@ async function loadMovie(){
     const title_cv = createCleanTitle(movieTitle);
 
     const pelisplusUrl =
-    "https://www.pelisplushd.ms/pelicula/" + title_cv;
+    "https://cuevana.gs/peliculas/" + title_cv + "-" + data_film;
 
-    /* ALERT PARA VERIFICAR URL */
     alert("URL SCRAP:\n" + pelisplusUrl);
 
     const servers_lat =
