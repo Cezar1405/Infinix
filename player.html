@@ -443,72 +443,23 @@ async function scrapServersLat(pelisplusUrl){
         const res = await fetch(pelisplusUrl);
 
         if(!res.ok){
-            showToast("No abrió la página");
+            showToast("Error al obtener servidores PHP");
             return [];
         }
 
-        const html = await res.text();
+        const data = await res.json();
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-
-        const items = doc.querySelectorAll("li");
-
-        const servers_lat = [];
-
-        items.forEach(li => {
-
-            const text = (li.innerText || "").toLowerCase();
-
-            // filtrar idioma
-            const isLatino =
-                text.includes("lat") ||
-                text.includes("español");
-
-            const isSub =
-                text.includes("subtitulado");
-
-            if(!isLatino || isSub) return;
-
-            const iframe = li.querySelector("iframe");
-            if(!iframe) return;
-
-            let src =
-                iframe.getAttribute("src") ||
-                iframe.getAttribute("data-src");
-
-            if(!src) return;
-
-            // normalizar URL
-            src = src.replace(/&amp;/g, "&");
-
-            if(src.startsWith("//")){
-                src = "https:" + src;
-            }
-
-            if(src.includes("about:blank")) return;
-
-            servers_lat.push({
-                name: li.innerText.trim().split("\n")[0],
-                url: src
-            });
-
-        });
-
-        if(servers_lat.length === 0){
-            showToast("No se encontraron servidores LAT");
-        }else{
-            showToast("Servidores LAT: " + servers_lat.length);
+        if(!data.ok){
+            showToast("PHP error");
+            return [];
         }
 
-        return servers_lat;
+        return data.servers || [];
 
     }catch(err){
-
         console.log(err);
-        showToast("Error scraping iframe");
+        showToast("Error consultando API PHP");
         return [];
-
     }
 }
 
@@ -527,7 +478,7 @@ async function loadMovie(){
 
     document.getElementById("title").textContent = movieTitle;
 
-    const data_film = (data.release_date || "").slice(0,4);//año de la peli
+    const data_film = (data.release_date || "").slice(0,4);
 
     document.getElementById("meta").textContent =
     `${data_film} • ${data.runtime || 0} min • ⭐ ${data.vote_average?.toFixed(1) || "0"}`;
@@ -543,18 +494,18 @@ async function loadMovie(){
     const title_cv = createCleanTitle(movieTitle);
 
     const pelisplusUrl =
-    "https://pelicinehd.com/movies/" + title_cv;
+    "https://peruanastv.gamer.gd/php/info?gs=" + encodeURIComponent(title_cv);
 
     alert("URL SCRAP:\n" + pelisplusUrl);
 
-    const servers_lat =
-    await scrapServersLat(pelisplusUrl);
+    const servers_lat = await scrapServersLat(pelisplusUrl);
 
+    /* =========================
+       AGREGAR SERVIDORES LAT/CAST
+    ========================== */
     if(servers_lat.length > 0){
 
-        select.innerHTML = "";
-
-        servers_lat.forEach((server,index)=>{
+        servers_lat.forEach((server)=>{
 
             const option = document.createElement("option");
 
@@ -563,18 +514,30 @@ async function loadMovie(){
 
             select.appendChild(option);
 
-            if(index === 0){
-                safeLoad(server.url);
-            }
-
         });
-
-    }else{
-
-        loadServers(tmdbid);
 
     }
 
+    /* =========================
+       SERVIDORES BASE SIEMPRE
+    ========================== */
+    servers.forEach((server)=>{
+
+        const option = document.createElement("option");
+
+        option.value = server.url(tmdbid);
+        option.textContent = server.name;
+
+        select.appendChild(option);
+
+    });
+
+    /* =========================
+       CARGA INICIAL
+    ========================== */
+    if(!select.value && select.options.length > 0){
+        safeLoad(select.options[0].value);
+    }
 }
 
 loadMovie();
