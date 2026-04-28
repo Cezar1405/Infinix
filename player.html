@@ -452,41 +452,60 @@ async function scrapServersLat(pelisplusUrl){
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
 
-        const iframes = doc.querySelectorAll("iframe");
+        const items = doc.querySelectorAll("li");
 
         const servers_lat = [];
 
-        iframes.forEach(frame => {
+        items.forEach(li => {
 
-            let src = frame.getAttribute("src");
+            const text = (li.innerText || "").toLowerCase();
+
+            // filtrar idioma
+            const isLatino =
+                text.includes("lat") ||
+                text.includes("español");
+
+            const isSub =
+                text.includes("subtitulado");
+
+            if(!isLatino || isSub) return;
+
+            const iframe = li.querySelector("iframe");
+            if(!iframe) return;
+
+            let src =
+                iframe.getAttribute("src") ||
+                iframe.getAttribute("data-src");
 
             if(!src) return;
 
-            // normalizar URL relativa
+            // normalizar URL
+            src = src.replace(/&amp;/g, "&");
+
             if(src.startsWith("//")){
                 src = "https:" + src;
             }
 
-            // filtrar vacíos o basura
             if(src.includes("about:blank")) return;
 
             servers_lat.push({
-                name: "Cuevana",
+                name: li.innerText.trim().split("\n")[0],
                 url: src
             });
 
         });
 
         if(servers_lat.length === 0){
-            showToast("No se encontraron iframes");
+            showToast("No se encontraron servidores LAT");
         }else{
-            showToast("IFRAMES encontrados: " + servers_lat.length);
+            showToast("Servidores LAT: " + servers_lat.length);
         }
 
         return servers_lat;
 
     }catch(err){
 
+        console.log(err);
         showToast("Error scraping iframe");
         return [];
 
@@ -508,7 +527,7 @@ async function loadMovie(){
 
     document.getElementById("title").textContent = movieTitle;
 
-    const data_film = (data.release_date || "").slice(0,4);
+    const data_film = (data.release_date || "").slice(0,4);//año de la peli
 
     document.getElementById("meta").textContent =
     `${data_film} • ${data.runtime || 0} min • ⭐ ${data.vote_average?.toFixed(1) || "0"}`;
@@ -524,7 +543,7 @@ async function loadMovie(){
     const title_cv = createCleanTitle(movieTitle);
 
     const pelisplusUrl =
-    "https://cuevana.gs/peliculas/" + title_cv + "-" + data_film;
+    "https://pelicinehd.com/movies/" + title_cv;
 
     alert("URL SCRAP:\n" + pelisplusUrl);
 
