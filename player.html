@@ -150,7 +150,7 @@ margin-bottom:8px;
 letter-spacing:1px;
 }
 
-.server-select{
+.server-select, .server-select2{
 width:100%;
 padding:14px;
 border:none;
@@ -225,7 +225,6 @@ font-size:18px;
 <label class="server-title">
 SERVER SELECTION
 </label>
-
 <select id="serverSelect" class="server-select"></select>
 
 </div>
@@ -261,6 +260,9 @@ function isAllowed(url) {
     }
 }
 
+let lastSafeUrl = null;
+let monitor = null;
+
 function safeLoad(url) {
 
     if (!isAllowed(url)) {
@@ -268,14 +270,32 @@ function safeLoad(url) {
         return;
     }
 
+    lastSafeUrl = url;
     frame.src = url;
 }
 
+/* CONVERTIR TITULO */
+function createCleanTitle(title){
+
+    return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")   // quita tildes
+    .replace(/[*"'`:;!?,.()[\]{}]/g, "") // quita especiales
+    .replace(/\s+/g, "-")             // espacios -> -
+    .replace(/-+/g, "-")              // varios - -> uno
+    .replace(/^-|-$/g, "");           // limpia extremos
+}
+
+/* BLOQUEAR POPUPS EXTERNOS */
 window.open = function () {
     console.log("Popup bloqueado");
     return null;
 };
+
+/* BLOQUEAR LINKS _blank */
 document.addEventListener("click", function (e) {
+
     const a = e.target.closest("a");
     if (!a) return;
 
@@ -283,50 +303,46 @@ document.addEventListener("click", function (e) {
         e.preventDefault();
         console.log("Bloqueado target _blank");
     }
+
 });
-frame.onload = () => {
+
+/* CONTROLAR IFRAME */
+frame.addEventListener("load", () => {
+
     try {
         frame.contentWindow.open = function () {
             console.log("Popup dentro del iframe bloqueado");
             return null;
         };
-    } catch (e) {
-        // cross-origin (normal en streams)
-    }
-};
-
-let lastSafeUrl = null;
-
-frame.onload = () => {
-    try {
-        const win = frame.contentWindow;
-
-        if (!lastSafeUrl) lastSafeUrl = frame.src;
-
-        setInterval(() => {
-            try {
-                const current = win.location.href;
-
-                if (!isAllowed(current)) {
-                    console.log("Redirección bloqueada:", current);
-                    win.location.replace(lastSafeUrl);
-                }
-
-            } catch (e) {
-                // cross-origin → no control total
-            }
-        }, 1000);
-
     } catch (e) {}
-};
+
+    if (monitor) clearInterval(monitor);
+
+    monitor = setInterval(() => {
+
+        try {
+
+            const current = frame.contentWindow.location.href;
+
+            if (!isAllowed(current)) {
+                console.log("Redirección bloqueada:", current);
+                frame.src = lastSafeUrl;
+            }
+
+        } catch (e) {}
+
+    }, 1000);
+
+});
 
 function togglePanel(){
-panel.classList.toggle("active");
 
-btn.innerHTML =
-panel.classList.contains("active")
-? "❯"
-: "❮";
+    panel.classList.toggle("active");
+
+    btn.innerHTML =
+    panel.classList.contains("active")
+    ? "❯"
+    : "❮";
 }
 
 /* SERVERS DINAMICOS */
@@ -364,12 +380,12 @@ url:id => `https://www.vidsrc.wtf/api/2/movie/?color=FF0000&id=${id}`
 
 {
 name:"MAIN 7",
-url:id => `https://www.vidsrc.wtf/api/3/movie/?color=FF0000&id=${id}}`
+url:id => `https://www.vidsrc.wtf/api/3/movie/?color=FF0000&id=${id}`
 },
 
 {
 name:"MAIN 8",
-url:id => `https://www.vidsrc.wtf/api/4/movie/?color=FF0000&id=${id}}`
+url:id => `https://www.vidsrc.wtf/api/4/movie/?color=FF0000&id=${id}`
 }
 
 ];
@@ -377,60 +393,157 @@ url:id => `https://www.vidsrc.wtf/api/4/movie/?color=FF0000&id=${id}}`
 /* CARGAR SERVERS */
 function loadServers(id){
 
-select.innerHTML = "";
+    select.innerHTML = "";
 
-servers.forEach((server,index)=>{
+    servers.forEach((server,index)=>{
 
-const option = document.createElement("option");
+        const option = document.createElement("option");
 
-option.value = server.url(id);
-option.textContent = server.name;
+        option.value = server.url(id);
+        option.textContent = server.name;
 
-select.appendChild(option);
+        select.appendChild(option);
 
-if(index === 0){
-safeLoad(option.value);
-}
+        if(index === 0){
+            safeLoad(option.value);
+        }
 
-});
+    });
 
 }
 
 select.addEventListener("change",function(){
-frame.src = this.value;
+    safeLoad(this.value);
 });
 
 /* LEER URL */
 const params = new URLSearchParams(location.search);
 const tmdbid = params.get("tmdbid");
 
+/*SCRAPPING*/
+async function scrapServersLat(pelisplusUrl){
+
+    try{
+
+        const res = await fetch(pelisplusUrl);
+        const html = await res.text();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        const items = doc.querySelectorAll("li.playurl");
+
+        const servers_lat = [];
+
+        items.forEach(item => {
+
+            const idioma =
+                (item.dataset.name || "")
+                .toLowerCase()
+                .trim();
+
+            if(
+                idioma === "español" ||
+                idioma === "español latino"
+            ){
+
+                const host =
+                    item.innerText.trim();
+
+                const url =
+                    item.dataset.url;
+
+                if(url){
+                    servers_lat.push({
+                        name: host,
+                        url: url
+                    });
+                }
+
+            }
+
+        });
+
+        console.log(servers_lat);
+        return servers_lat;
+
+    }catch(err){
+
+        console.log("Error scraping:", err);
+        return [];
+
+    }
+
+}
+
 /* CARGAR TMDB */
 async function loadMovie(){
 
-if(!tmdbid) return;
+    if(!tmdbid) return;
 
-const url =
-`https://api.themoviedb.org/3/movie/${tmdbid}?api_key=${API_KEY}&language=es-ES`;
+    const url =
+    `https://api.themoviedb.org/3/movie/${tmdbid}?api_key=${API_KEY}&language=es-MX`;
 
-const res = await fetch(url);
-const data = await res.json();
+    const res = await fetch(url);
+    const data = await res.json();
 
-document.getElementById("title").textContent =
-data.title || "Sin título";
+    const movieTitle = data.title || "Sin título";
 
-document.getElementById("meta").textContent =
-`${(data.release_date || "").slice(0,4)} • ${data.runtime || 0} min • ⭐ ${data.vote_average?.toFixed(1) || "0"}`;
+    document.getElementById("title").textContent = movieTitle;
 
-document.getElementById("desc").textContent =
-data.overview || "Sin descripción.";
+    document.getElementById("meta").textContent =
+    `${(data.release_date || "").slice(0,4)} • ${data.runtime || 0} min • ⭐ ${data.vote_average?.toFixed(1) || "0"}`;
 
-document.getElementById("poster").src =
-data.poster_path
-? `https://image.tmdb.org/t/p/w300${data.poster_path}`
-: "";
+    document.getElementById("desc").textContent =
+    data.overview || "Sin descripción.";
 
-loadServers(tmdbid);
+    document.getElementById("poster").src =
+    data.poster_path
+    ? `https://image.tmdb.org/t/p/w300${data.poster_path}`
+    : "";
 
+    /* TITULO LIMPIO */
+    const title_cv = createCleanTitle(movieTitle);
+
+    /* URL GENERADA */
+    const pelisplusUrl =
+    "https://www.pelisplushd.ms/pelicula/" + title_cv;
+
+    console.log("Título limpio:", title_cv);
+console.log("URL scraping:", pelisplusUrl);
+
+/* SCRAPEAR SERVERS LATINO */
+const servers_lat = await scrapServersLat(pelisplusUrl);
+
+console.log("Servers LAT:", servers_lat);
+
+/* si encontró links latinos los usa */
+if(servers_lat.length > 0){
+
+    select.innerHTML = "";
+
+    servers_lat.forEach((server,index)=>{
+
+        const option = document.createElement("option");
+
+        option.value = server.url;
+        option.textContent = server.name;
+
+        select.appendChild(option);
+
+        if(index === 0){
+            safeLoad(server.url);
+        }
+
+    });
+
+}else{
+
+    /* fallback a tus servers normales */
+    loadServers(tmdbid);
+
+}
+    
 }
 
 loadMovie();
