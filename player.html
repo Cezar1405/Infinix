@@ -435,33 +435,6 @@ select.addEventListener("change",function(){
 const params = new URLSearchParams(location.search);
 const tmdbid = params.get("tmdbid");
 
-/* SCRAPING */
-async function scrapServersLat(pelisplusUrl){
-
-    try{
-
-        const res = await fetch(pelisplusUrl);
-
-        const text = await res.text();
-
-        console.log("RESPUESTA PHP:", text);
-
-        const data = JSON.parse(text);
-
-        if(!data || !data.ok){
-            showToast("PHP respondió error");
-            return [];
-        }
-
-        return data.servers || [];
-
-    }catch(err){
-        console.log("ERROR REAL:", err);
-        showToast("Error consultando API PHP");
-        return [];
-    }
-}
-
 /* CARGAR TMDB */
 async function loadMovie(){
 
@@ -499,8 +472,19 @@ async function loadMovie(){
 
     const servers_lat = await scrapServersLat(pelisplusUrl);
 
+    /* limpiar select (IMPORTANTE) */
+    select.innerHTML = "";
+
     /* =========================
-       AGREGAR SERVIDORES LAT/CAST
+       🔥 TU SERVER PELICINE (PRIMERO)
+    ========================== */
+    const optPelis = document.createElement("option");
+    optPelis.value = pelisplusUrl;
+    optPelis.textContent = "PELICINE (AUTO)";
+    select.appendChild(optPelis);
+
+    /* =========================
+       SERVIDORES LAT/CAST
     ========================== */
     if(servers_lat.length > 0){
 
@@ -518,7 +502,7 @@ async function loadMovie(){
     }
 
     /* =========================
-       SERVIDORES BASE SIEMPRE
+       SERVIDORES BASE
     ========================== */
     servers.forEach((server)=>{
 
@@ -534,7 +518,7 @@ async function loadMovie(){
     /* =========================
        CARGA INICIAL
     ========================== */
-    if(!select.value && select.options.length > 0){
+    if(select.options.length > 0){
         safeLoad(select.options[0].value);
     }
 }
