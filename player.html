@@ -442,22 +442,21 @@ async function scrapServersLat(pelisplusUrl){
 
         const res = await fetch(pelisplusUrl);
 
-        if(!res.ok){
-            showToast("Error al obtener servidores PHP");
-            return [];
-        }
+        const text = await res.text();
 
-        const data = await res.json();
+        console.log("RESPUESTA PHP:", text);
 
-        if(!data.ok){
-            showToast("PHP error");
+        const data = JSON.parse(text);
+
+        if(!data || !data.ok){
+            showToast("PHP respondió error");
             return [];
         }
 
         return data.servers || [];
 
     }catch(err){
-        console.log(err);
+        console.log("ERROR REAL:", err);
         showToast("Error consultando API PHP");
         return [];
     }
