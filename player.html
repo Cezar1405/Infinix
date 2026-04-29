@@ -471,39 +471,16 @@ async function loadMovie(){
     alert("URL SCRAP:\n" + pelisplusUrl);
 
 
-    /* limpiar select (IMPORTANTE) */
-    select.innerHTML = "";
-
-    select.innerHTML = "";
-
-/* =========================
-   🔥 PELICINE (SERVER REAL)
+    /* =========================
+   PELICINE SERVER (PHP)
 ========================= */
-try {
 
-    const pelisplusUrl =
-    "https://peruanastv.gamer.gd/php/info?gs=" + encodeURIComponent(title_cv);
-
-    alert("URL SCRAP:\n" + pelisplusUrl);
-
-    const resPelis = await fetch(pelisplusUrl);
-    const dataPelis = await resPelis.json();
-
-    if (dataPelis.ok && dataPelis.servers.length > 0) {
-
-        dataPelis.servers.forEach(server => {
-
-            const option = document.createElement("option");
-            option.value = server.url;
-            option.textContent = "PELICINE - " + server.name;
-
-            select.appendChild(option);
-        });
-    }
-
-} catch (e) {
-    console.log("Pelcine error:", e);
-}
+    /* servidor pelicine como uno más */
+    const optionPelis = document.createElement("option");
+    optionPelis.value = pelisplusUrl;
+    optionPelis.textContent = "PELICINE";
+    
+    select.appendChild(optionPelis);
 
     /* =========================
        SERVIDORES BASE
