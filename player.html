@@ -470,36 +470,40 @@ async function loadMovie(){
 
     alert("URL SCRAP:\n" + pelisplusUrl);
 
-    const servers_lat = await scrapServersLat(pelisplusUrl);
 
     /* limpiar select (IMPORTANTE) */
     select.innerHTML = "";
 
-    /* =========================
-       🔥 TU SERVER PELICINE (PRIMERO)
-    ========================== */
-    const optPelis = document.createElement("option");
-    optPelis.value = pelisplusUrl;
-    optPelis.textContent = "PELICINE (AUTO)";
-    select.appendChild(optPelis);
+    select.innerHTML = "";
 
-    /* =========================
-       SERVIDORES LAT/CAST
-    ========================== */
-    if(servers_lat.length > 0){
+/* =========================
+   🔥 PELICINE (SERVER REAL)
+========================= */
+try {
 
-        servers_lat.forEach((server)=>{
+    const pelisplusUrl =
+    "https://peruanastv.gamer.gd/php/info?gs=" + encodeURIComponent(title_cv);
+
+    alert("URL SCRAP:\n" + pelisplusUrl);
+
+    const resPelis = await fetch(pelisplusUrl);
+    const dataPelis = await resPelis.json();
+
+    if (dataPelis.ok && dataPelis.servers.length > 0) {
+
+        dataPelis.servers.forEach(server => {
 
             const option = document.createElement("option");
-
             option.value = server.url;
-            option.textContent = server.name;
+            option.textContent = "PELICINE - " + server.name;
 
             select.appendChild(option);
-
         });
-
     }
+
+} catch (e) {
+    console.log("Pelcine error:", e);
+}
 
     /* =========================
        SERVIDORES BASE
@@ -510,9 +514,8 @@ async function loadMovie(){
 
         option.value = server.url(tmdbid);
         option.textContent = server.name;
-
+    
         select.appendChild(option);
-
     });
 
     /* =========================
