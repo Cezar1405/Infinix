@@ -55,7 +55,7 @@ window.onload = () => {
 
     const iframe = document.createElement("iframe");
     iframe.className = "player";
-    iframe.src = videoUrl;
+    iframe.src = atob(videoUrl);
     iframe.allowFullscreen = true;
     iframe.setAttribute("frameborder", "0");
 
